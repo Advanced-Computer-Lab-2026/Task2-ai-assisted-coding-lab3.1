@@ -7,8 +7,7 @@ const reviewSchema = new mongoose.Schema(
     comment: { type: String },
     reviewedBy: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: 'User',
-      required: true
+      ref: 'User'
     }
   },
   { timestamps: true }
