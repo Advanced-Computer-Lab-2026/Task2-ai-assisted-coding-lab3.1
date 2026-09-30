@@ -1,6 +1,6 @@
 import Joi from 'joi';
 import bcrypt from 'bcryptjs';
-import { Review, User } from '../models/Review.js';
+import { Review} from '../models/Review.js';
 
 // GET /api/reviews
 const CreateSchema = Joi.object({
