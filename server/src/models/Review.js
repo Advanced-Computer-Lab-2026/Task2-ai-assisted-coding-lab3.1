@@ -1,14 +1,21 @@
 import mongoose from 'mongoose';
 
-// TODO: define the Review schema per README.md section 1.
-
 const reviewSchema = new mongoose.Schema(
   {
-    // TODO
+    mealCode: { type: String, required: true },
+    rating: { type: Number, required: true, min: 1, max: 5 },
+    comment: { type: String },
+    reviewedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User' }
   },
   { timestamps: true }
 );
 
-// TODO: add the compound uniqueness constraint described in README.md section 1.
+// One review per (meal, user). The partial filter keeps anonymous reviews
+// (no reviewedBy) from colliding with each other, since a missing field would
+// otherwise be indexed as null and only one anonymous review per meal allowed.
+reviewSchema.index(
+  { mealCode: 1, reviewedBy: 1 },
+  { unique: true, partialFilterExpression: { reviewedBy: { $exists: true } } }
+);
 
 export const Review = mongoose.model('Review', reviewSchema);
