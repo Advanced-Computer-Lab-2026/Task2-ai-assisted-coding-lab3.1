@@ -8,6 +8,10 @@ import {
 
 const router = Router();
 
+router.post('/', createReview);
+router.get('/', getAllReviews);
+router.get('/summary', getReviewSummary);
+router.get('/:id', getReview);
 // TODO: wire up the three routes in README.md section 2 and the summary route in section 3.
 
 export default router;
