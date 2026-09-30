@@ -25,6 +25,10 @@ const reviewSchema = new mongoose.Schema(
   },
   { timestamps: true }
 );
+reviewSchema.index(
+  { mealCode: 1, reviewedBy: 1 },
+  { unique: true }
+);
 
 reviewSchema.index({ mealCode: 1, reviewedBy: 1 });
 
