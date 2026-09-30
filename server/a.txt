@@ -1,0 +1,516 @@
+=== C:\Users\Ossama\Task2-ai-assisted-coding-lab3.1\server\.env === 
+PORT=4000
+MONGO_URI=mongodb://tasks:pass1234@ac-j3acrgb-shard-00-00.lueesfz.mongodb.net:27017,ac-j3acrgb-shard-00-01.lueesfz.mongodb.net:27017,ac-j3acrgb-shard-00-02.lueesfz.mongodb.net:27017/?ssl=true&replicaSet=atlas-6to6iy-shard-0&authSource=admin&appName=Cluster0 
+=== C:\Users\Ossama\Task2-ai-assisted-coding-lab3.1\server\package.json === 
+{
+  "name": "server",
+  "type": "module",
+  "version": "0.1.0",
+  "scripts": {
+    "dev": "nodemon src/index.js",
+    "start": "node src/index.js",
+    "test": "NODE_OPTIONS=--experimental-vm-modules jest --runInBand",
+    "grade": "NODE_OPTIONS=--experimental-vm-modules jest --runInBand --verbose"
+  },
+  "dependencies": {
+    "bcryptjs": "^2.4.3",
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.5",
+    "express": "^4.19.2",
+    "mongoose": "^8.6.0",
+    "morgan": "^1.10.0",
+    "joi": "^17.12.3"
+  },
+  "devDependencies": {
+    "jest": "^29.7.0",
+    "nodemon": "^3.1.0",
+    "supertest": "^7.1.1"
+  },
+  "jest": {
+    "testEnvironment": "node",
+    "testTimeout": 20000
+  }
+}
+
+=== C:\Users\Ossama\Task2-ai-assisted-coding-lab3.1\server\src\app.js === 
+import express from 'express';
+import morgan from 'morgan';
+import cors from 'cors';
+import reviewRoutes from './routes/reviews.js';
+import userRoutes from './routes/users.js';
+
+const app = express();
+
+app.use(morgan('dev'));
+app.use(cors());
+app.use(express.json());
+
+app.get('/api/health', (req, res) => res.json({ ok: true }));
+
+app.use('/api/reviews', reviewRoutes);
+app.use('/api/users', userRoutes);
+
+// Not found
+app.use((req, res) => {
+  res.status(404).json({ message: 'Not Found' });
+});
+
+// Error handler
+app.use((err, req, res, next) => {
+  console.error(err);
+  res.status(err.status || 500).json({ message: err.message || 'Server Error' });
+});
+
+export default app;
+
+=== C:\Users\Ossama\Task2-ai-assisted-coding-lab3.1\server\src\index.js === 
+import dotenv from 'dotenv';
+dotenv.config();
+import app from './app.js';
+import { connectDB } from './config/db.js';
+
+const PORT = process.env.PORT || 4000;
+
+async function bootstrap() {
+  await connectDB();
+  app.listen(PORT, () => {
+    console.log(`API listening on http://localhost:${PORT}`);
+  });
+}
+bootstrap();
+
+=== C:\Users\Ossama\Task2-ai-assisted-coding-lab3.1\server\src\config\db.js === 
+import mongoose from 'mongoose';
+
+export async function connectDB() {
+  const uri = process.env.MONGO_URI;
+  if (!uri) throw new Error('MONGO_URI is not set');
+  try {
+    await mongoose.connect(uri, { autoIndex: true });
+    console.log('MongoDB connected');
+  } catch (err) {
+    console.error('MongoDB connection error', err.message);
+    process.exit(1);
+  }
+}
+
+=== C:\Users\Ossama\Task2-ai-assisted-coding-lab3.1\server\src\controllers\reviewController.js === 
+import { Review } from '../models/Review.js';
+
+// GET /api/reviews
+// TODO: implement per README.md section 2.
+export async function getAllReviews(req, res, next) {
+  try {
+    // TODO
+  } catch (err) { next(err); }
+}
+
+// GET /api/reviews/:id
+// TODO: implement per README.md section 2.
+export async function getReview(req, res, next) {
+  try {
+    // TODO
+  } catch (err) { next(err); }
+}
+
+// POST /api/reviews
+// TODO: implement per README.md section 2.
+export async function createReview(req, res, next) {
+  try {
+    // TODO
+  } catch (err) { next(err); }
+}
+
+// GET /api/reviews/summary?mealCode=ML101
+// TODO: implement per README.md section 3.
+export async function getReviewSummary(req, res, next) {
+  try {
+    // TODO
+  } catch (err) { next(err); }
+}
+
+=== C:\Users\Ossama\Task2-ai-assisted-coding-lab3.1\server\src\controllers\userController.js === 
+import Joi from 'joi';
+import bcrypt from 'bcryptjs';
+import { User } from '../models/User.js';
+
+const createSchema = Joi.object({
+  name: Joi.string().min(2).max(60).required(),
+  email: Joi.string().email().required(),
+  password: Joi.string().min(6).required()
+});
+
+const updateSchema = Joi.object({
+  name: Joi.string().min(2).max(60),
+  email: Joi.string().email()
+});
+
+function publicUser(u) {
+  return { id: u._id.toString(), name: u.name, email: u.email, createdAt: u.createdAt };
+}
+
+// GET /api/users
+export async function getAllUsers(req, res, next) {
+  try {
+    const users = await User.find().sort({ createdAt: -1 }).lean();
+    res.json({ users: users.map(publicUser) });
+  } catch (err) { next(err); }
+}
+
+// GET /api/users/:id
+export async function getUser(req, res, next) {
+  try {
+    const user = await User.findById(req.params.id);
+    if (!user) return res.status(404).json({ message: 'User not found' });
+    res.json({ user: publicUser(user) });
+  } catch (err) { next(err); }
+}
+
+// POST /api/users
+export async function createUser(req, res, next) {
+  try {
+    const { value, error } = createSchema.validate(req.body);
+    if (error) return res.status(400).json({ message: error.message });
+
+    const existing = await User.findOne({ email: value.email });
+    if (existing) return res.status(409).json({ message: 'Email already used' });
+
+    const password = await bcrypt.hash(value.password, 10);
+    const user = await User.create({ name: value.name, email: value.email, password });
+    res.status(201).json({ user: publicUser(user) });
+  } catch (err) { next(err); }
+}
+
+// PATCH /api/users/:id
+export async function updateUser(req, res, next) {
+  try {
+    const { value, error } = updateSchema.validate(req.body, { abortEarly: false, stripUnknown: true });
+    if (error) return res.status(400).json({ message: error.message });
+
+    const doc = await User.findByIdAndUpdate(req.params.id, { $set: value }, { new: true, runValidators: true });
+    if (!doc) return res.status(404).json({ message: 'User not found' });
+    res.json({ user: publicUser(doc) });
+  } catch (err) { next(err); }
+}
+
+// DELETE /api/users/:id
+export async function deleteUser(req, res, next) {
+  try {
+    const doc = await User.findByIdAndDelete(req.params.id);
+    if (!doc) return res.status(404).json({ message: 'User not found' });
+    res.json({ ok: true });
+  } catch (err) { next(err); }
+}
+
+=== C:\Users\Ossama\Task2-ai-assisted-coding-lab3.1\server\src\models\Review.js === 
+import mongoose from 'mongoose';
+
+// TODO: define the Review schema per README.md section 1.
+
+const reviewSchema = new mongoose.Schema(
+  {
+    // TODO
+  },
+  { timestamps: true }
+);
+
+// TODO: add the compound uniqueness constraint described in README.md section 1.
+
+export const Review = mongoose.model('Review', reviewSchema);
+
+=== C:\Users\Ossama\Task2-ai-assisted-coding-lab3.1\server\src\models\User.js === 
+import mongoose from 'mongoose';
+
+const userSchema = new mongoose.Schema(
+  {
+    name: { type: String, required: true },
+    email: { type: String, required: true, unique: true, lowercase: true },
+    password: { type: String, required: true }
+  },
+  { timestamps: true }
+);
+
+export const User = mongoose.model('User', userSchema);
+
+=== C:\Users\Ossama\Task2-ai-assisted-coding-lab3.1\server\src\routes\reviews.js === 
+import { Router } from 'express';
+import {
+  getAllReviews,
+  getReview,
+  createReview,
+  getReviewSummary
+} from '../controllers/reviewController.js';
+
+const router = Router();
+
+// TODO: wire up the three routes in README.md section 2 and the summary route in section 3.
+
+export default router;
+
+=== C:\Users\Ossama\Task2-ai-assisted-coding-lab3.1\server\src\routes\users.js === 
+import { Router } from 'express';
+import {
+  getAllUsers,
+  getUser,
+  createUser,
+  updateUser,
+  deleteUser
+} from '../controllers/userController.js';
+
+const router = Router();
+
+router.get('/', getAllUsers);
+router.get('/:id', getUser);
+router.post('/', createUser);
+router.patch('/:id', updateUser);
+router.delete('/:id', deleteUser);
+
+export default router;
+
+=== C:\Users\Ossama\Task2-ai-assisted-coding-lab3.1\server\tests\grade.test.js === 
+import 'dotenv/config';
+import { randomBytes } from 'node:crypto';
+import { jest } from '@jest/globals';
+import mongoose from 'mongoose';
+import request from 'supertest';
+import app from '../src/app.js';
+import { Review } from '../src/models/Review.js';
+import { graded, printReport } from './rubric.js';
+
+const BASE = '/api/reviews';
+const REQUEST_TIMEOUT_MS = 5000;
+
+// Each run uses its own throwaway database on the MONGO_URI cluster, so parallel
+// runs never touch each other's data. The shared account is not allowed to drop
+// a database, so cleanup drops the run's collections instead: a MongoDB
+// database with no collections no longer exists. A run that dies before its
+// cleanup leaves its database behind, so every run first sweeps grade_
+// databases older than STALE_AFTER_MS, dated by the timestamp in their name.
+const RUN_DB = `grade_${process.env.GITHUB_RUN_ID || 'local'}_${Date.now()}_${randomBytes(3).toString('hex')}`;
+const GRADE_DB = /^grade_[^_]+_(\d{13})_[0-9a-f]{6}$/;
+const STALE_AFTER_MS = 60 * 60 * 1000;
+
+async function dropAllCollections(db) {
+  const collections = await db.listCollections({}, { nameOnly: true }).toArray();
+  for (const { name } of collections) {
+    await db.dropCollection(name).catch(() => {});
+  }
+}
+
+async function sweepStaleRunDatabases() {
+  const client = mongoose.connection.getClient();
+  const { databases } = await client.db().admin().listDatabases({ nameOnly: true });
+  const cutoff = Date.now() - STALE_AFTER_MS;
+  for (const { name } of databases) {
+    const match = GRADE_DB.exec(name);
+    if (match && Number(match[1]) < cutoff) await dropAllCollections(client.db(name));
+  }
+}
+
+beforeAll(async () => {
+  if (!process.env.MONGO_URI) throw new Error('MONGO_URI is not set (see README "Database connection")');
+  await mongoose.connect(process.env.MONGO_URI, { dbName: RUN_DB, autoIndex: true, maxPoolSize: 2 });
+  await sweepStaleRunDatabases().catch((err) => console.warn('Stale grade_ database sweep skipped:', err.message));
+  await Review.init();
+}, 60000);
+
+beforeEach(async () => {
+  const collections = await mongoose.connection.db.collections();
+  for (const collection of collections) {
+    await collection.deleteMany({});
+  }
+});
+
+afterAll(async () => {
+  printReport();
+  if (mongoose.connection.readyState === 1) {
+    await dropAllCollections(mongoose.connection.db).catch(() => {});
+  }
+  await mongoose.disconnect();
+});
+
+// ---------- helpers ----------
+
+const api = {
+  get: (path) => request(app).get(path).timeout(REQUEST_TIMEOUT_MS),
+  post: (path, body) => request(app).post(path).send(body).timeout(REQUEST_TIMEOUT_MS)
+};
+
+const newId = () => new mongoose.Types.ObjectId().toString();
+const idOf = (doc) => String(doc?._id ?? doc?.id);
+
+function seed(overrides = {}) {
+  return Review.create({
+    mealCode: 'ML101',
+    rating: 4,
+    comment: 'Seeded entry',
+    reviewedBy: newId(),
+    ...overrides
+  });
+}
+
+function numericOption(path, key) {
+  const value = path?.options?.[key];
+  return Array.isArray(value) ? value[0] : value;
+}
+
+// ---------- graded checks ----------
+
+graded('model_fields', async () => {
+  const schema = Review.schema;
+  const own = Object.keys(schema.paths)
+    .filter((p) => !['_id', '__v', 'createdAt', 'updatedAt'].includes(p))
+    .sort();
+  expect(own).toEqual(['mealCode', 'rating', 'comment', 'reviewedBy'].sort());
+  expect(schema.path('mealCode').instance).toBe('String');
+  expect(schema.path('rating').instance).toBe('Number');
+  expect(schema.path('comment').instance).toBe('String');
+  expect(schema.path('reviewedBy').instance).toBe('ObjectId');
+  expect(schema.path('reviewedBy').options.ref).toBe('User');
+});
+
+graded('model_rules', async () => {
+  const schema = Review.schema;
+  expect(schema.path('mealCode')?.isRequired).toBe(true);
+
+  const rating = schema.path('rating');
+  expect(rating?.isRequired).toBe(true);
+  expect(numericOption(rating, 'min')).toBe(1);
+  expect(numericOption(rating, 'max')).toBe(5);
+
+  expect(Boolean(schema.path('comment')?.isRequired)).toBe(false);
+  expect(Boolean(schema.path('reviewedBy')?.isRequired)).toBe(false);
+});
+
+graded('unique_index', async () => {
+  const schema = Review.schema;
+  expect(schema.path('createdAt')).toBeDefined();
+  expect(schema.path('updatedAt')).toBeDefined();
+
+  const compoundUnique = schema
+    .indexes()
+    .filter(([fields, options]) => Object.keys(fields).length > 1 && options?.unique === true);
+  expect(compoundUnique).toHaveLength(1);
+  expect(compoundUnique[0][0]).toEqual({ mealCode: 1, reviewedBy: 1 });
+});
+
+graded('create', async () => {
+  const payload = {
+    mealCode: 'ML101',
+    rating: 4,
+    comment: 'Clear and useful',
+    reviewedBy: newId()
+  };
+  const res = await api.post(BASE, payload);
+  expect(res.status).toBe(201);
+  expect(res.body.review).toBeDefined();
+  expect(res.body.review.mealCode).toBe('ML101');
+  expect(res.body.review.rating).toBe(4);
+
+  const stored = await Review.findById(idOf(res.body.review)).lean();
+  expect(stored).not.toBeNull();
+  expect(stored.mealCode).toBe('ML101');
+  expect(stored.rating).toBe(4);
+  expect(stored.comment).toBe('Clear and useful');
+  expect(String(stored.reviewedBy)).toBe(payload.reviewedBy);
+});
+
+graded('list', async () => {
+  const a = await seed({ rating: 5 });
+  const b = await seed({ mealCode: 'ML202', rating: 2 });
+
+  const res = await api.get(BASE);
+  expect(res.status).toBe(200);
+  expect(Array.isArray(res.body.reviews)).toBe(true);
+  expect(res.body.reviews).toHaveLength(2);
+  const ids = res.body.reviews.map(idOf).sort();
+  expect(ids).toEqual([a._id.toString(), b._id.toString()].sort());
+});
+
+graded('get_one', async () => {
+  const doc = await seed();
+
+  const res = await api.get(`${BASE}/${doc._id}`);
+  expect(res.status).toBe(200);
+  expect(idOf(res.body.review)).toBe(doc._id.toString());
+  expect(res.body.review.mealCode).toBe('ML101');
+
+  const missing = await api.get(`${BASE}/${newId()}`);
+  expect(missing.status).toBe(404);
+  expect(missing.body).toEqual({ message: 'Review not found' });
+});
+
+graded('summary', async () => {
+  await seed({ rating: 5 });
+  await seed({ rating: 4 });
+  await seed({ rating: 3 });
+  await seed({ mealCode: 'ML202', rating: 1 });
+
+  const spy = jest.spyOn(Review, 'aggregate');
+  try {
+    const res = await api.get(`${BASE}/summary?mealCode=ML101`);
+    expect(res.status).toBe(200);
+    expect(res.body).toEqual({ mealCode: 'ML101', averageRating: 4, reviewCount: 3 });
+    expect(spy).toHaveBeenCalled();
+
+    const empty = await api.get(`${BASE}/summary?mealCode=ML999`);
+    expect(empty.status).toBe(200);
+    expect(empty.body).toEqual({ mealCode: 'ML999', averageRating: 0, reviewCount: 0 });
+  } finally {
+    spy.mockRestore();
+  }
+});
+
+graded('summary_query', async () => {
+  await seed();
+
+  // /summary must be its own route, not swallowed by /:id.
+  const summary = await api.get(`${BASE}/summary?mealCode=ML101`);
+  expect(summary.status).toBe(200);
+  expect(summary.body.mealCode).toBe('ML101');
+
+  const noQuery = await api.get(`${BASE}/summary`);
+  expect(noQuery.status).toBe(400);
+  expect(noQuery.body).toEqual({ message: 'mealCode is required' });
+});
+
+=== C:\Users\Ossama\Task2-ai-assisted-coding-lab3.1\server\tests\rubric.js === 
+// Functional grading rubric: each check is reported on its own, so a grade is a
+// breakdown rather than a single number. Every graded test in grade.test.js is
+// registered through graded(), which records PASS/FAIL for the final report.
+// The GRADE_BREAKDOWN line is read by the grading workflow; keep its format.
+
+export const RUBRIC = [
+  ['model_fields', 'Model fields'],
+  ['model_rules', 'Model rules'],
+  ['unique_index', 'Timestamps and unique index'],
+  ['create', 'Create'],
+  ['list', 'List'],
+  ['get_one', 'Get one'],
+  ['summary', 'Summary aggregation'],
+  ['summary_query', 'Summary query and routing']
+];
+
+export const TOTAL_CHECKS = RUBRIC.length;
+
+const results = new Map();
+
+export function graded(key, fn) {
+  const entry = RUBRIC.find(([k]) => k === key);
+  if (!entry) throw new Error(`Unknown rubric item ${key}`);
+  test(`[check] ${entry[1]}`, async () => {
+    results.set(key, false);
+    await fn();
+    results.set(key, true);
+  });
+}
+
+export function printReport() {
+  const breakdown = Object.fromEntries(RUBRIC.map(([key]) => [key, results.get(key) === true ? 1 : 0]));
+  const lines = RUBRIC.map(([key, name]) => `${breakdown[key] ? 'PASS' : 'FAIL'} [check] ${name}`);
+  const passed = Object.values(breakdown).reduce((sum, v) => sum + v, 0);
+  lines.push('', `Functional grade: ${passed}/${TOTAL_CHECKS}`, `GRADE_BREAKDOWN ${JSON.stringify(breakdown)}`);
+  process.stdout.write(`\n${lines.join('\n')}\n\n`);
+  return passed;
+}
+
