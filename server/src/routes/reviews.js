@@ -1,4 +1,5 @@
 import { Router } from 'express';
+
 import {
   getAllReviews,
   getReview,
@@ -8,6 +9,16 @@ import {
 
 const router = Router();
 
-// TODO: wire up the three routes in README.md section 2 and the summary route in section 3.
+// Summary must come before /:id
+router.get('/summary', getReviewSummary);
+
+// Get all reviews
+router.get('/', getAllReviews);
+
+// Get one review
+router.get('/:id', getReview);
+
+// Create a review
+router.post('/', createReview);
 
 export default router;
