@@ -1,33 +1,41 @@
 import { Review } from '../models/Review.js';
 
 // GET /api/reviews
-// TODO: implement per README.md section 2.
 export async function getAllReviews(req, res, next) {
   try {
-    // TODO
+    const reviews = await Review.find();
+    res.json({ reviews });
   } catch (err) { next(err); }
 }
 
 // GET /api/reviews/:id
-// TODO: implement per README.md section 2.
 export async function getReview(req, res, next) {
   try {
-    // TODO
+    const review = await Review.findById(req.params.id);
+    if (!review) return res.status(404).json({ message: 'Review not found' });
+    res.json({ review });
   } catch (err) { next(err); }
 }
 
 // POST /api/reviews
-// TODO: implement per README.md section 2.
 export async function createReview(req, res, next) {
   try {
-    // TODO
+    const review = await Review.create(req.body);
+    res.status(201).json({ review });
   } catch (err) { next(err); }
 }
 
 // GET /api/reviews/summary?mealCode=ML101
-// TODO: implement per README.md section 3.
 export async function getReviewSummary(req, res, next) {
   try {
-    // TODO
+    const { mealCode } = req.query;
+    if (!mealCode) return res.status(400).json({ message: 'Meal code is required' });
+
+    const reviews = await Review.find({ mealCode });
+    const summary = {
+      totalReviews: reviews.length,
+      averageRating: reviews.reduce((sum, r) => sum + r.rating, 0) / reviews.length || 0,
+    };
+    res.json({ summary });
   } catch (err) { next(err); }
 }
