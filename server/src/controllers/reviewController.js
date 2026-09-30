@@ -3,7 +3,7 @@ import bcrypt from 'bcryptjs';
 import { Review} from '../models/Review.js';
 
 // GET /api/reviews
-const CreateSchema = Joi.object({
+const createSchema = Joi.object({
   mealcode: Joi.string().required(),
   rating : Joi.number().min(1).max(5).required(),
   comment: Joi.string(),
@@ -31,7 +31,7 @@ function publicReview(r) {
 export async function getAllReviews(req, res, next) {
   try {
     const reviews = await Review.find().sort({createdAt:-1}).lean();
-    res.josn({reviews: reviews.map(publicReview)});
+    res.json({reviews: reviews.map(publicReview)});
   } catch (err) { next(err); }
 }
 
