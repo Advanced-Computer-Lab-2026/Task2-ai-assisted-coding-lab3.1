@@ -25,7 +25,9 @@ const reviewSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
-// One review per user per meal
 reviewSchema.index({ mealCode: 1, reviewedBy: 1 }, { unique: true });
 
-export default mongoose.model('Review', reviewSchema);
+const Review = mongoose.model('Review', reviewSchema);
+
+export default Review;
+export { Review };
