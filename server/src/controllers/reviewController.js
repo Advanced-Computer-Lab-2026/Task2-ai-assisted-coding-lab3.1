@@ -1,33 +1,79 @@
+import Joi from 'joi';
 import { Review } from '../models/Review.js';
 
+const createSchema = Joi.object({
+  mealCode: Joi.string().required(),
+  rating: Joi.number().min(1).max(5).required(),
+  comment: Joi.string().optional(),
+  reviewedBy: Joi.string().hex().length(24).optional()
+});
+
 // GET /api/reviews
-// TODO: implement per README.md section 2.
 export async function getAllReviews(req, res, next) {
   try {
-    // TODO
+    const reviews = await Review.find().sort({ createdAt: -1 }).lean();
+    res.json({ reviews });
   } catch (err) { next(err); }
 }
 
 // GET /api/reviews/:id
-// TODO: implement per README.md section 2.
 export async function getReview(req, res, next) {
   try {
-    // TODO
+    const review = await Review.findById(req.params.id).lean();
+    if (!review) return res.status(404).json({ message: 'Review not found' });
+    res.json({ review });
   } catch (err) { next(err); }
 }
 
 // POST /api/reviews
-// TODO: implement per README.md section 2.
 export async function createReview(req, res, next) {
   try {
-    // TODO
-  } catch (err) { next(err); }
+    const { value, error } = createSchema.validate(req.body);
+    if (error) return res.status(400).json({ message: error.message });
+
+    const review = await Review.create(value);
+    res.status(201).json({ review });
+  } catch (err) {
+    // Handle MongoDB duplicate key error for compound index
+    if (err.code === 11000) {
+      return res.status(409).json({ message: 'User has already reviewed this meal' });
+    }
+    next(err);
+  }
 }
 
 // GET /api/reviews/summary?mealCode=ML101
-// TODO: implement per README.md section 3.
 export async function getReviewSummary(req, res, next) {
   try {
-    // TODO
+    const { mealCode } = req.query;
+    if (!mealCode) {
+      return res.status(400).json({ message: 'mealCode is required' });
+    }
+
+    const result = await Review.aggregate([
+      { $match: { mealCode: mealCode } },
+      {
+        $group: {
+          _id: '$mealCode',
+          averageRating: { $avg: '$rating' },
+          reviewCount: { $sum: 1 }
+        }
+      }
+    ]);
+
+    if (result.length === 0) {
+      return res.json({
+        mealCode,
+        averageRating: 0,
+        reviewCount: 0
+      });
+    }
+
+    const summary = result[0];
+    res.json({
+      mealCode: summary._id,
+      averageRating: summary.averageRating,
+      reviewCount: summary.reviewCount
+    });
   } catch (err) { next(err); }
 }
