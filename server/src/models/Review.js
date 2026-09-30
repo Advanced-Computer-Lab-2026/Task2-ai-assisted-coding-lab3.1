@@ -1,6 +1,4 @@
-import mongoose from "mongoose";
-
-// TODO: define the Review schema per README.md section 1.
+const mongoose = require("mongoose");
 
 const reviewSchema = new mongoose.Schema(
   {
@@ -28,6 +26,6 @@ const reviewSchema = new mongoose.Schema(
   { timestamps: true },
 );
 
-// TODO: add the compound uniqueness constraint described in README.md section 1.
 reviewSchema.index({ mealCode: 1, reviewedBy: 1 }, { unique: true });
-export const Review = mongoose.model("Review", reviewSchema);
+
+module.exports = mongoose.model("Review", reviewSchema);
